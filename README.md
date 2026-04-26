@@ -1,59 +1,46 @@
-# GroceryList
+# Grocery list
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.8.
+Невеликий застосунок для списків покупок: **Angular** + **[json-server](https://github.com/typicode/json-server)** (REST з `db.json`).
 
-## Development server
+## Що потрібно
 
-To start a local development server, run:
+- Node.js (див. `packageManager` у `package.json`)
+- Залежності: `npm install`
 
-```bash
-ng serve
-```
+## Як запустити
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+**API і фронт разом** (рекомендовано):
 
 ```bash
-ng generate component component-name
+npm run dev
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+- API: `http://localhost:3000` (дані з кореневого `db.json`)
+- Застосунок: `http://localhost:4200` → редірект на `/lists` (перший список або `/lists/new`, якщо списків немає)
+
+**Окремо в двох терміналах:**
 
 ```bash
-ng generate --help
+npm run api
 ```
-
-## Building
-
-To build the project run:
 
 ```bash
-ng build
+npm start
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Без API інтерфейс відкриється, але збереження даних не працюватиме.
 
-## Running unit tests
+URL бекенду задається в `src/environments/environment.ts`.
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+## Інші команди
 
-```bash
-ng test
-```
+| Команда           | Призначення                |
+| ----------------- | -------------------------- |
+| `npm run build`   | Продакшн-збірка в `dist/`  |
+| `npm test`        | Юніт-тести (Vitest), watch |
+| `npm run test:ci` | Тести один прогін (CI)     |
+| `npm run lint`    | ESLint                     |
 
-## Running end-to-end tests
+## Мова інтерфейсу
 
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+За замовчуванням — **українська**. Перемикач **УКР / EN** у шапці; вибір зберігається в `localStorage` під ключем `lang` (`en` або все інше → укр).

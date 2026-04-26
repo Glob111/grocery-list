@@ -1,0 +1,35 @@
+{
+  "lists": [
+    {
+      "id": 1,
+      "name": "Перший список"
+    },
+    {
+      "id": 2,
+      "name": "Нагадування"
+    }
+  ],
+  "items": [
+    {
+      "id": 1,
+      "listId": 1,
+      "title": "Молоко",
+      "amount": 5,
+      "bought": true
+    },
+    {
+      "id": 2,
+      "listId": 1,
+      "title": "Хліб",
+      "amount": 2,
+      "bought": true
+    },
+    {
+      "listId": 1,
+      "title": "Сир",
+      "amount": 120,
+      "bought": true,
+      "id": 4
+    }
+  ]
+}

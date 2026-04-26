@@ -1,0 +1,152 @@
+@if (hasLoadError()) {
+  <section class="detail-empty">
+    <p class="detail-empty__text" role="alert">{{ 'listDetail.loadError' | translate }}</p>
+    <a class="btn btn--ghost" routerLink="/lists">{{ 'common.home' | translate }}</a>
+  </section>
+} @else if (list(); as l) {
+  <header class="detail-head">
+    <div class="detail-head__text">
+      <h1 class="detail-head__title">{{ l.name }}</h1>
+      <p class="detail-head__meta">
+        {{ 'listDetail.meta' | translate: { count: itemsArray.length } }}
+      </p>
+    </div>
+    <a class="btn btn--ghost" [routerLink]="['/lists', l.id, 'edit']">{{
+      'listDetail.editList' | translate
+    }}</a>
+  </header>
+
+  <section class="card" aria-labelledby="add-title">
+    <h2 class="card__title" id="add-title">{{ 'listDetail.addTitle' | translate }}</h2>
+    @if (addItemError()) {
+      <p class="card__inline-error" role="alert">{{ 'listDetail.addItemError' | translate }}</p>
+    }
+    <form class="add-form" [formGroup]="addForm" (ngSubmit)="addItem()">
+      <label class="add-form__field">
+        <span class="add-form__label">{{ 'listDetail.nameLabel' | translate }}</span>
+        <div class="add-form__control">
+          <input class="add-form__input" type="text" formControlName="title" autocomplete="off" />
+          @if (addSubmitAttempted() && addForm.controls.title.hasError('required')) {
+            <p class="form__hint form__hint--error">
+              {{ 'listDetail.addNameRequired' | translate }}
+            </p>
+          }
+        </div>
+      </label>
+      <label class="add-form__field add-form__field--narrow">
+        <span class="add-form__label">{{ 'listDetail.qtyLabel' | translate }}</span>
+        <div class="add-form__control">
+          <input class="add-form__input" type="number" formControlName="amount" min="1" step="1" />
+          @if (addSubmitAttempted() && addForm.controls.amount.invalid) {
+            <p class="form__hint form__hint--error">
+              {{ 'listDetail.itemQtyInvalid' | translate }}
+            </p>
+          }
+        </div>
+      </label>
+      <button class="btn btn--primary add-form__submit" type="submit">
+        {{ 'listDetail.add' | translate }}
+      </button>
+    </form>
+  </section>
+
+  @if (itemsArray.length === 0) {
+    <section class="empty" aria-live="polite">
+      <p class="empty__title">{{ 'listDetail.emptyTitle' | translate }}</p>
+      <p class="empty__text">{{ 'listDetail.emptyText' | translate }}</p>
+    </section>
+  } @else {
+    <ul class="items" [attr.aria-label]="'listDetail.itemsAria' | translate">
+      @for (row of itemsArray.controls; track rowGroup(row).get('id')?.value) {
+        <li
+          class="items__row"
+          [class.items__row--bought]="rowGroup(row).get('bought')?.value"
+          [formGroup]="rowGroup(row)"
+        >
+          <label class="items__check">
+            <input
+              type="checkbox"
+              formControlName="bought"
+              (change)="onBoughtChange(rowGroup(row), $event)"
+              [attr.aria-label]="
+                'listDetail.boughtAria'
+                  | translate: { title: itemFields(rowGroup(row)).controls['title'].value }
+              "
+            />
+            @if (showItemBoughtHttpError(rowGroup(row))) {
+              <span class="items__check-hint" role="alert">{{
+                'listDetail.boughtSyncError' | translate
+              }}</span>
+            }
+          </label>
+          <div class="items__fields" formGroupName="fields">
+            <div class="items__field-wrap items__field-wrap--title">
+              <input
+                class="items__input items__input--title"
+                type="text"
+                formControlName="title"
+                [attr.aria-label]="
+                  'listDetail.nameFieldAria'
+                    | translate: { title: itemFields(rowGroup(row)).controls['title'].value }
+                "
+              />
+              @if (
+                showItemSaveValidationErrors(rowGroup(row)) &&
+                itemFields(rowGroup(row)).controls['title'].hasError('required')
+              ) {
+                <span class="items__field-hint" role="alert">{{
+                  'listDetail.itemNameRequired' | translate
+                }}</span>
+              }
+            </div>
+            <div class="items__field-wrap items__field-wrap--qty">
+              <input
+                class="items__input items__input--amount"
+                type="number"
+                formControlName="amount"
+                min="1"
+                step="1"
+                [attr.aria-label]="'listDetail.qtyAria' | translate"
+              />
+              @if (
+                showItemSaveValidationErrors(rowGroup(row)) &&
+                itemFields(rowGroup(row)).controls['amount'].invalid
+              ) {
+                <span class="items__field-hint" role="alert">{{
+                  'listDetail.itemQtyInvalid' | translate
+                }}</span>
+              }
+            </div>
+          </div>
+          <div class="items__actions">
+            @if (showItemSaveHttpError(rowGroup(row))) {
+              <p class="items__action-error" role="alert">
+                {{ 'listDetail.saveItemError' | translate }}
+              </p>
+            }
+            @if (showItemDeleteHttpError(rowGroup(row))) {
+              <p class="items__action-error" role="alert">
+                {{ 'listDetail.deleteItemError' | translate }}
+              </p>
+            }
+            <button
+              class="btn btn--ghost btn--small"
+              type="button"
+              [disabled]="!canSaveRow(rowGroup(row))"
+              (click)="saveRow(rowGroup(row))"
+            >
+              {{ 'listDetail.save' | translate }}
+            </button>
+            <button
+              class="btn btn--ghost btn--small btn--danger-text"
+              type="button"
+              (click)="deleteRow(rowGroup(row))"
+            >
+              {{ 'listDetail.delete' | translate }}
+            </button>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+}

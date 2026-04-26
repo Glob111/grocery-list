@@ -1,0 +1,66 @@
+{
+  "common": {
+    "home": "Home"
+  },
+  "shell": {
+    "loadError": "Could not load lists. Start the API: npm run api",
+    "listsNavAria": "Grocery lists",
+    "newListTab": "+ New list",
+    "langGroupAria": "Interface language",
+    "langUk": "UK",
+    "langEn": "EN"
+  },
+  "redirect": {
+    "loading": "Loading…"
+  },
+  "listNew": {
+    "title": "New list",
+    "lead": "Enter a name — after saving you will open an empty grocery list.",
+    "submitError": "Could not create the list. Make sure json-server is running (npm run api).",
+    "nameLabel": "List name",
+    "nameRequired": "Name is required",
+    "create": "Create",
+    "creating": "Saving…",
+    "cancel": "Cancel"
+  },
+  "listEdit": {
+    "loadError": "List not found or API unavailable.",
+    "title": "Edit list",
+    "lead": "Change the name or delete the list completely.",
+    "saveError": "Could not save changes.",
+    "deleteError": "Could not delete the list.",
+    "nameLabel": "Name",
+    "nameRequired": "Name is required",
+    "save": "Save",
+    "saving": "Saving…",
+    "back": "Back to list",
+    "dangerTitle": "Danger zone",
+    "dangerText": "Deleting the list will remove all items. There is no confirmation step.",
+    "delete": "Delete list",
+    "deleting": "Deleting…"
+  },
+  "listDetail": {
+    "loadError": "List not found or API unavailable.",
+    "meta": "Items: {{count}}",
+    "editList": "Edit list",
+    "addTitle": "Add item",
+    "nameLabel": "Name",
+    "qtyLabel": "Quantity",
+    "add": "Add",
+    "addItemError": "Could not add the item. Make sure the API is running (npm run api).",
+    "addNameRequired": "Enter an item name",
+    "itemNameRequired": "Name cannot be empty",
+    "itemQtyInvalid": "Minimum is 1",
+    "emptyTitle": "This list is empty",
+    "emptyText": "Add the first item using the form above.",
+    "itemsAria": "List items",
+    "boughtAria": "Bought: {{title}}",
+    "nameFieldAria": "Name: {{title}}",
+    "qtyAria": "Quantity",
+    "save": "Save",
+    "saveItemError": "Could not save the item.",
+    "delete": "Delete",
+    "deleteItemError": "Could not delete the item.",
+    "boughtSyncError": "Could not update bought status."
+  }
+}

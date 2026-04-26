@@ -108,7 +108,7 @@ export default defineConfig([
       'import/no-namespace': 'off',
       'import/no-nodejs-modules': 'error',
       'import/no-relative-packages': 'error',
-      'import/no-relative-parent-imports': 'error',
+      'import/no-relative-parent-imports': 'off',
       'import/no-restricted-paths': 'error',
       'import/no-self-import': 'error',
       'import/no-unassigned-import': 'error',
@@ -265,8 +265,6 @@ export default defineConfig([
       ],
 
       '@typescript-eslint/default-param-last': ['error'],
-      // "@typescript-eslint/dot-notation": ["error"],
-      // "@typescript-eslint/no-unnecessary-type-assertion": ["error"],
       'prettier/prettier': 'error',
 
       '@typescript-eslint/explicit-function-return-type': [
@@ -1520,6 +1518,12 @@ export default defineConfig([
       '@angular-eslint/template/role-has-required-aria': 'error',
       '@angular-eslint/template/table-scope': 'error',
       '@angular-eslint/template/valid-aria': 'error',
+    },
+  },
+  {
+    files: ['src/main.ts'],
+    rules: {
+      'no-console': 'off',
     },
   },
 ]);

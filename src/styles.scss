@@ -1,1 +1,45 @@
-/* You can add global styles to this file, and also import other style files */
+@use 'styles/tokens';
+@use 'styles/reset';
+@use 'styles/panel-form';
+
+.page-container {
+  width: 100%;
+  max-width: var(--page-max-width);
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.9375rem;
+}
+
+.btn:disabled,
+.btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  background: var(--color-text-strong);
+  color: var(--color-surface);
+}
+
+.btn--ghost {
+  background: transparent;
+  border-color: var(--color-border-muted);
+  color: var(--color-text-strong);
+}
+
+.btn--danger {
+  background: var(--color-danger);
+  color: var(--color-surface);
+  border-color: var(--color-danger);
+}

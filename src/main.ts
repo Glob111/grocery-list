@@ -4,6 +4,5 @@ import { appConfig } from './app/app.config';
 import { App } from './app/app';
 
 bootstrapApplication(App, appConfig).catch((err) => {
-  // eslint-disable-next-line no-console -- last-resort bootstrap failure logging
   console.error(err);
 });

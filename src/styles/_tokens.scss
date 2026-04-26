@@ -1,0 +1,18 @@
+:root {
+  --color-bg: #f2f3f5;
+  --color-surface: #ffffff;
+  --color-text: #5c5f66;
+  --color-text-strong: #0d0d0d;
+  --color-accent: #e891a8;
+  --color-accent-soft: #f4c3d1;
+  --color-border: #e891a8;
+  --color-border-muted: #e3e5e9;
+  --color-danger: #c62828;
+  --color-danger-bg: #ffebee;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --shadow-soft: 0 4px 18px rgb(13 13 13 / 6%);
+  --font-sans:
+    system-ui, -apple-system, 'Segoe UI', roboto, ubuntu, cantarell, 'Noto Sans', sans-serif;
+  --page-max-width: 1200px;
+}

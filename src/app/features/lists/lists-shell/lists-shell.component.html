@@ -1,0 +1,49 @@
+<div class="shell">
+  @if (hasLoadError()) {
+    <div class="shell__banner" role="alert">{{ 'shell.loadError' | translate }}</div>
+  }
+  <header class="shell__header">
+    <div class="shell__header-inner page-container shell__header-row">
+      <div class="shell__tabs-scroll">
+        <nav class="shell__tabs" [attr.aria-label]="'shell.listsNavAria' | translate">
+          @for (list of lists(); track list.id) {
+            <a
+              class="shell__tab"
+              [routerLink]="['/lists', list.id]"
+              routerLinkActive="shell__tab--active"
+              [title]="list.name"
+              >{{ list.name }}</a
+            >
+          }
+          <a
+            class="shell__tab shell__tab--new"
+            routerLink="/lists/new"
+            routerLinkActive="shell__tab--active"
+            >{{ 'shell.newListTab' | translate }}</a
+          >
+        </nav>
+      </div>
+      <div class="shell__lang" role="group" [attr.aria-label]="'shell.langGroupAria' | translate">
+        <button
+          type="button"
+          class="shell__lang-btn"
+          [class.shell__lang-btn--active]="currentLang() === 'uk'"
+          (click)="setLang('uk')"
+        >
+          {{ 'shell.langUk' | translate }}
+        </button>
+        <button
+          type="button"
+          class="shell__lang-btn"
+          [class.shell__lang-btn--active]="currentLang() === 'en'"
+          (click)="setLang('en')"
+        >
+          {{ 'shell.langEn' | translate }}
+        </button>
+      </div>
+    </div>
+  </header>
+  <main class="shell__main page-container">
+    <router-outlet />
+  </main>
+</div>
