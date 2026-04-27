@@ -1,9 +1,9 @@
-@if (hasLoadError()) {
+@if (facade.detailLoadError()) {
   <section class="detail-empty">
     <p class="detail-empty__text" role="alert">{{ 'listDetail.loadError' | translate }}</p>
     <a class="btn btn--ghost" routerLink="/lists">{{ 'common.home' | translate }}</a>
   </section>
-} @else if (list(); as l) {
+} @else if (facade.detailList(); as l) {
   <header class="detail-head">
     <div class="detail-head__text">
       <h1 class="detail-head__title">{{ l.name }}</h1>
@@ -18,7 +18,7 @@
 
   <section class="card" aria-labelledby="add-title">
     <h2 class="card__title" id="add-title">{{ 'listDetail.addTitle' | translate }}</h2>
-    @if (addItemError()) {
+    @if (facade.detailAddItemError()) {
       <p class="card__inline-error" role="alert">{{ 'listDetail.addItemError' | translate }}</p>
     }
     <form class="add-form" [formGroup]="addForm" (ngSubmit)="addItem()">

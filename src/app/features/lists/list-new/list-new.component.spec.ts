@@ -2,9 +2,10 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
-import { EmptyTranslateLoader } from '@testing/empty-translate.loader';
 
+import { EmptyTranslateLoader } from '@testing/empty-translate.loader';
 import { GroceryApiService } from '@app/core/services/grocery-api.service';
+import { ListsFacade } from '@app/features/lists/state/lists-facade.service';
 
 import { ListNew } from './list-new.component';
 
@@ -20,12 +21,14 @@ describe('ListNew', () => {
           loader: { provide: TranslateLoader, useClass: EmptyTranslateLoader },
         }),
       ],
-      providers: [provideRouter([]), { provide: GroceryApiService, useValue: api }],
+      providers: [provideRouter([]), ListsFacade, { provide: GroceryApiService, useValue: api }],
     }).compileComponents();
+    TestBed.inject(ListsFacade);
   });
 
   it('submit sets submitAttempted and does not call API when form invalid', () => {
     const fixture = TestBed.createComponent(ListNew);
+    fixture.detectChanges();
     const cmp = fixture.componentInstance;
     cmp.submit();
     expect(cmp.submitAttempted()).toBe(true);
@@ -38,6 +41,7 @@ describe('ListNew', () => {
     const nav = vi.spyOn(router, 'navigate').mockResolvedValue(true);
 
     const fixture = TestBed.createComponent(ListNew);
+    fixture.detectChanges();
     const cmp = fixture.componentInstance;
     cmp.form.controls.name.setValue('Groceries');
     cmp.submit();
@@ -49,6 +53,7 @@ describe('ListNew', () => {
   it('submit sets submitError when API fails', () => {
     api.createList.mockReturnValue(throwError(() => new Error('network')));
     const fixture = TestBed.createComponent(ListNew);
+    fixture.detectChanges();
     const cmp = fixture.componentInstance;
     cmp.form.controls.name.setValue('A');
     cmp.submit();

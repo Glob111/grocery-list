@@ -5,6 +5,7 @@ import { of, throwError } from 'rxjs';
 import { EmptyTranslateLoader } from '@testing/empty-translate.loader';
 
 import { GroceryApiService } from '@app/core/services/grocery-api.service';
+import { ListsFacade } from '@app/features/lists/state/lists-facade.service';
 
 import { ListRedirect } from './list-redirect.component';
 
@@ -20,8 +21,9 @@ describe('ListRedirect', () => {
           loader: { provide: TranslateLoader, useClass: EmptyTranslateLoader },
         }),
       ],
-      providers: [provideRouter([]), { provide: GroceryApiService, useValue: api }],
+      providers: [provideRouter([]), ListsFacade, { provide: GroceryApiService, useValue: api }],
     }).compileComponents();
+    TestBed.inject(ListsFacade);
   });
 
   it('navigates to first list id when lists exist', () => {

@@ -3,9 +3,10 @@ import { FormGroup } from '@angular/forms';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
 import { BehaviorSubject, of, throwError } from 'rxjs';
-import { EmptyTranslateLoader } from '@testing/empty-translate.loader';
 
+import { EmptyTranslateLoader } from '@testing/empty-translate.loader';
 import { GroceryApiService } from '@app/core/services/grocery-api.service';
+import { ListsFacade } from '@app/features/lists/state/lists-facade.service';
 
 import { ListDetail } from './list-detail.component';
 
@@ -43,6 +44,7 @@ describe('ListDetail', () => {
       ],
       providers: [
         provideRouter([]),
+        ListsFacade,
         { provide: GroceryApiService, useValue: api },
         {
           provide: ActivatedRoute,
@@ -60,8 +62,8 @@ describe('ListDetail', () => {
     const fixture = TestBed.createComponent(ListDetail);
     fixture.detectChanges();
     const cmp = fixture.componentInstance;
-    expect(cmp.list()).toEqual({ id: 1, name: 'Shop' });
-    expect(cmp.hasLoadError()).toBe(false);
+    expect(cmp.facade.detailList()).toEqual({ id: 1, name: 'Shop' });
+    expect(cmp.facade.detailLoadError()).toBe(false);
     expect(cmp.itemsArray.length).toBe(1);
     expect(cmp.addSubmitAttempted()).toBe(false);
   });
@@ -72,8 +74,9 @@ describe('ListDetail', () => {
     fixture.detectChanges();
     expect(api.getList).not.toHaveBeenCalled();
     expect(api.getItems).not.toHaveBeenCalled();
-    expect(fixture.componentInstance.hasLoadError()).toBe(true);
-    expect(fixture.componentInstance.list()).toBeNull();
+    const i = fixture.componentInstance;
+    expect(i.facade.detailLoadError()).toBe(true);
+    expect(i.facade.detailList()).toBeNull();
   });
 
   it('sets hasLoadError when forkJoin fails', () => {
@@ -81,8 +84,9 @@ describe('ListDetail', () => {
     api.getItems.mockReturnValue(of([]));
     const fixture = TestBed.createComponent(ListDetail);
     fixture.detectChanges();
-    expect(fixture.componentInstance.hasLoadError()).toBe(true);
-    expect(fixture.componentInstance.list()).toBeNull();
+    const i = fixture.componentInstance;
+    expect(i.facade.detailLoadError()).toBe(true);
+    expect(i.facade.detailList()).toBeNull();
   });
 
   it('addItem sets addSubmitAttempted and aborts when invalid', () => {
@@ -107,7 +111,7 @@ describe('ListDetail', () => {
     cmp.addForm.controls.title.setValue('Milk');
     cmp.addForm.controls.amount.setValue(1);
     cmp.addItem();
-    expect(cmp.addItemError()).toBe(true);
+    expect(cmp.facade.detailAddItemError()).toBe(true);
   });
 
   it('addItem calls API and appends row when valid', () => {
@@ -173,7 +177,7 @@ describe('ListDetail', () => {
     cmp.itemFields(row).patchValue({ title: 'b', amount: 2 });
     cmp.itemFields(row).markAsDirty();
     cmp.saveRow(row);
-    expect(cmp.itemSaveHttpErrorId()).toBe(44);
+    expect(cmp.facade.detailItemSaveHttpErrorId()).toBe(44);
     expect(cmp.savingRowId()).toBeNull();
   });
 
@@ -213,7 +217,7 @@ describe('ListDetail', () => {
     const row = firstItemRow(cmp);
     cmp.deleteRow(row);
     expect(api.deleteItem).toHaveBeenCalledWith(44);
-    expect(cmp.itemDeleteHttpErrorId()).toBe(44);
+    expect(cmp.facade.detailItemDeleteHttpErrorId()).toBe(44);
     expect(cmp.itemsArray.length).toBe(1);
   });
 

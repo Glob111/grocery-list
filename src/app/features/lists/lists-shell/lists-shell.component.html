@@ -1,12 +1,12 @@
 <div class="shell">
-  @if (hasLoadError()) {
+  @if (facade.catalogError()) {
     <div class="shell__banner" role="alert">{{ 'shell.loadError' | translate }}</div>
   }
   <header class="shell__header">
     <div class="shell__header-inner page-container shell__header-row">
       <div class="shell__tabs-scroll">
         <nav class="shell__tabs" [attr.aria-label]="'shell.listsNavAria' | translate">
-          @for (list of lists(); track list.id) {
+          @for (list of facade.catalog(); track list.id) {
             <a
               class="shell__tab"
               [routerLink]="['/lists', list.id]"

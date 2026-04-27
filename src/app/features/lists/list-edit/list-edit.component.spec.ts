@@ -2,10 +2,11 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
 import { BehaviorSubject, of, throwError } from 'rxjs';
-import { EmptyTranslateLoader } from '@testing/empty-translate.loader';
 
+import { EmptyTranslateLoader } from '@testing/empty-translate.loader';
 import { GroceryList } from '@app/core/models/grocery.models';
 import { GroceryApiService } from '@app/core/services/grocery-api.service';
+import { ListsFacade } from '@app/features/lists/state/lists-facade.service';
 
 import { ListEdit } from './list-edit.component';
 
@@ -35,6 +36,7 @@ describe('ListEdit', () => {
       ],
       providers: [
         provideRouter([]),
+        ListsFacade,
         { provide: GroceryApiService, useValue: api },
         {
           provide: ActivatedRoute,
@@ -44,6 +46,7 @@ describe('ListEdit', () => {
         },
       ],
     }).compileComponents();
+    TestBed.inject(ListsFacade);
   });
 
   it('loads list and resets saveAttempted on success', () => {
@@ -52,18 +55,19 @@ describe('ListEdit', () => {
     const fixture = TestBed.createComponent(ListEdit);
     fixture.detectChanges();
     const cmp = fixture.componentInstance;
-    expect(cmp.list()).toEqual(loaded);
+    expect(cmp.facade.listEdit()).toEqual(loaded);
     expect(cmp.form.controls.name.value).toBe('Pantry');
-    expect(cmp.hasLoadError()).toBe(false);
-    expect(cmp.saveAttempted()).toBe(false);
+    expect(cmp.loadError()).toBe(false);
+    expect(cmp.facade.listEditSaveAttempted()).toBe(false);
   });
 
   it('sets hasLoadError when getList fails', () => {
     api.getList.mockReturnValue(throwError(() => new Error('404')));
     const fixture = TestBed.createComponent(ListEdit);
     fixture.detectChanges();
-    expect(fixture.componentInstance.hasLoadError()).toBe(true);
-    expect(fixture.componentInstance.list()).toBeNull();
+    const i = fixture.componentInstance;
+    expect(i.loadError()).toBe(true);
+    expect(i.facade.listEdit()).toBeNull();
   });
 
   it('save sets saveAttempted and does not call API when invalid', () => {
@@ -73,7 +77,7 @@ describe('ListEdit', () => {
     const cmp = fixture.componentInstance;
     cmp.form.controls.name.setValue('');
     cmp.save();
-    expect(cmp.saveAttempted()).toBe(true);
+    expect(cmp.facade.listEditSaveAttempted()).toBe(true);
     expect(api.updateList).not.toHaveBeenCalled();
   });
 
@@ -102,7 +106,7 @@ describe('ListEdit', () => {
     cmp.form.controls.name.setValue('New');
     cmp.save();
     expect(cmp.saveError()).toBe(true);
-    expect(cmp.submitting()).toBe(false);
+    expect(cmp.facade.listEditSubmitting()).toBe(false);
   });
 
   it('deleteList navigates to first list when lists remain', () => {
@@ -147,7 +151,7 @@ describe('ListEdit', () => {
 
     expect(api.deleteList).toHaveBeenCalledWith(2);
     expect(nav).toHaveBeenCalledWith(['/lists', 'new'], { replaceUrl: true });
-    expect(fixture.componentInstance.deleting()).toBe(false);
+    expect(fixture.componentInstance.facade.listEditDeleting()).toBe(false);
   });
 
   it('sets hasLoadError when route listId is invalid', () => {
@@ -155,8 +159,9 @@ describe('ListEdit', () => {
     const fixture = TestBed.createComponent(ListEdit);
     fixture.detectChanges();
     expect(api.getList).not.toHaveBeenCalled();
-    expect(fixture.componentInstance.hasLoadError()).toBe(true);
-    expect(fixture.componentInstance.list()).toBeNull();
+    const i = fixture.componentInstance;
+    expect(i.loadError()).toBe(true);
+    expect(i.facade.listEdit()).toBeNull();
   });
 
   it('deleteList sets deleteError when delete fails', () => {
@@ -167,6 +172,6 @@ describe('ListEdit', () => {
     const cmp = fixture.componentInstance;
     cmp.deleteList();
     expect(cmp.deleteError()).toBe(true);
-    expect(cmp.deleting()).toBe(false);
+    expect(cmp.facade.listEditDeleting()).toBe(false);
   });
 });

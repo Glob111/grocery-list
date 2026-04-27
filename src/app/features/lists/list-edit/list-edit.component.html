@@ -1,9 +1,9 @@
-@if (hasLoadError()) {
+@if (loadError()) {
   <section class="panel">
     <p class="panel__error" role="alert">{{ 'listEdit.loadError' | translate }}</p>
     <a class="btn btn--ghost" routerLink="/lists">{{ 'common.home' | translate }}</a>
   </section>
-} @else if (list(); as l) {
+} @else if (facade.listEdit(); as l) {
   <section class="panel">
     <h1 class="panel__title">{{ 'listEdit.title' | translate }}</h1>
     <p class="panel__lead">{{ 'listEdit.lead' | translate }}</p>
@@ -20,14 +20,18 @@
         <span class="form__text">{{ 'listEdit.nameLabel' | translate }}</span>
         <div class="form__control">
           <input class="form__input" type="text" formControlName="name" autocomplete="off" />
-          @if (saveAttempted() && form.controls.name.hasError('required')) {
+          @if (facade.listEditSaveAttempted() && form.controls.name.hasError('required')) {
             <p class="form__hint form__hint--error">{{ 'listEdit.nameRequired' | translate }}</p>
           }
         </div>
       </label>
       <div class="form__actions">
-        <button class="btn btn--primary" type="submit" [disabled]="submitting()">
-          {{ submitting() ? ('listEdit.saving' | translate) : ('listEdit.save' | translate) }}
+        <button class="btn btn--primary" type="submit" [disabled]="facade.listEditSubmitting()">
+          {{
+            facade.listEditSubmitting()
+              ? ('listEdit.saving' | translate)
+              : ('listEdit.save' | translate)
+          }}
         </button>
         <a class="btn btn--ghost" [routerLink]="['/lists', l.id]">{{
           'listEdit.back' | translate
@@ -38,8 +42,17 @@
     <section class="danger-zone" aria-labelledby="danger-title">
       <h2 class="danger-zone__title" id="danger-title">{{ 'listEdit.dangerTitle' | translate }}</h2>
       <p class="danger-zone__text">{{ 'listEdit.dangerText' | translate }}</p>
-      <button class="btn btn--danger" type="button" [disabled]="deleting()" (click)="deleteList()">
-        {{ deleting() ? ('listEdit.deleting' | translate) : ('listEdit.delete' | translate) }}
+      <button
+        class="btn btn--danger"
+        type="button"
+        [disabled]="facade.listEditDeleting()"
+        (click)="deleteList()"
+      >
+        {{
+          facade.listEditDeleting()
+            ? ('listEdit.deleting' | translate)
+            : ('listEdit.delete' | translate)
+        }}
       </button>
     </section>
   </section>

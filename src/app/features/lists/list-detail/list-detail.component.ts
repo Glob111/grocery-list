@@ -10,12 +10,16 @@ import {
 } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
-import { forkJoin, of, throwError } from 'rxjs';
-import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators';
 
-import { GroceryItem, GroceryList } from '@app/core/models/grocery.models';
-import { GroceryApiService } from '@app/core/services/grocery-api.service';
-import { parseListIdFromParam } from '@app/core/utils/parse-list-id';
+import { GroceryItem } from '@app/core/models/grocery.models';
+import { filterBusMessageByTypes } from '@app/features/lists/state/lists-bus-message.operators';
+import { newListsCorrelationId } from '@app/features/lists/state/lists-correlation';
+import { ListsEventsBus } from '@app/features/lists/state/lists-events-bus.service';
+import { ListsFacade } from '@app/features/lists/state/lists-facade.service';
+import {
+  LISTS_DETAIL_RESULT_TYPES,
+  ListsDetailResult,
+} from '@app/features/lists/state/lists.events';
 
 @Component({
   selector: 'app-list-detail',
@@ -24,15 +28,9 @@ import { parseListIdFromParam } from '@app/core/utils/parse-list-id';
   styleUrls: ['./list-detail.component.scss'],
 })
 export class ListDetail implements OnInit {
-  readonly list = signal<GroceryList | null>(null);
-  readonly hasLoadError = signal(false);
   readonly savingRowId = signal<number | null>(null);
   readonly addSubmitAttempted = signal(false);
   readonly itemSaveValidationIds = signal<ReadonlySet<number>>(new Set());
-  readonly addItemError = signal(false);
-  readonly itemSaveHttpErrorId = signal<number | null>(null);
-  readonly itemDeleteHttpErrorId = signal<number | null>(null);
-  readonly itemBoughtHttpErrorId = signal<number | null>(null);
 
   readonly addForm = inject(FormBuilder).nonNullable.group({
     title: ['', [Validators.required, Validators.maxLength(200)]],
@@ -40,48 +38,25 @@ export class ListDetail implements OnInit {
   });
 
   readonly itemsArray = new FormArray<FormGroup>([]);
+  readonly facade = inject(ListsFacade);
+
+  private readonly pendingBoughtByItemId = new Map<number, boolean>();
+  private readonly saveRowCorrelationById = new Map<number, string>();
 
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
-  private readonly api = inject(GroceryApiService);
+  private readonly listsBus = inject(ListsEventsBus);
   private readonly destroyRef = inject(DestroyRef);
-  /** FormArray updates from HttpClient do not mark the view dirty without Zone; signals alone do not cover controls[]. */
+  /** FormArray is not a signal: Http + zoneless; keep in sync with screen. */
   private readonly cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
-    this.route.paramMap
-      .pipe(
-        map((pm) => parseListIdFromParam(pm.get('listId'))),
-        distinctUntilChanged(),
-        switchMap((listId) =>
-          listId === null
-            ? throwError(() => new Error('invalid list id'))
-            : forkJoin({
-                list: this.api.getList(listId),
-                items: this.api.getItems(listId),
-              }).pipe(catchError(() => of(null))),
-        ),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe({
-        next: (res) => {
-          if (!res) {
-            this.hasLoadError.set(true);
-            this.list.set(null);
-            this.itemsArray.clear();
-            return;
-          }
-          this.hasLoadError.set(false);
-          this.list.set(res.list);
-          this.rebuildItemsForm(res.items);
-          this.addSubmitAttempted.set(false);
-        },
-        error: () => {
-          this.hasLoadError.set(true);
-          this.list.set(null);
-          this.itemsArray.clear();
-        },
+    this.listsBus.events$
+      .pipe(filterBusMessageByTypes(LISTS_DETAIL_RESULT_TYPES), takeUntilDestroyed(this.destroyRef))
+      .subscribe((e) => {
+        this.onDetailBusResult(e);
       });
+    this.listsBus.emit({ type: 'LIST_DETAIL_BIND', route: this.route });
   }
 
   rowGroup(ctrl: AbstractControl): FormGroup {
@@ -102,18 +77,15 @@ export class ListDetail implements OnInit {
   }
 
   showItemSaveHttpError(row: FormGroup): boolean {
-    const id = this.rowItemId(row);
-    return this.itemSaveHttpErrorId() === id;
+    return this.facade.detailItemSaveHttpErrorId() === this.rowItemId(row);
   }
 
   showItemDeleteHttpError(row: FormGroup): boolean {
-    const id = this.rowItemId(row);
-    return this.itemDeleteHttpErrorId() === id;
+    return this.facade.detailItemDeleteHttpErrorId() === this.rowItemId(row);
   }
 
   showItemBoughtHttpError(row: FormGroup): boolean {
-    const id = this.rowItemId(row);
-    return this.itemBoughtHttpErrorId() === id;
+    return this.facade.detailItemBoughtHttpErrorId() === this.rowItemId(row);
   }
 
   canSaveRow(row: FormGroup): boolean {
@@ -127,7 +99,7 @@ export class ListDetail implements OnInit {
 
   addItem(): void {
     this.addSubmitAttempted.set(true);
-    const list = this.list();
+    const list = this.facade.detailList();
     if (!list) {
       return;
     }
@@ -137,23 +109,10 @@ export class ListDetail implements OnInit {
     }
     const title = this.addForm.controls.title.value.trim();
     const amount = Math.max(1, Math.floor(Number(this.addForm.controls.amount.value)) || 1);
-    this.addItemError.set(false);
-    this.api
-      .createItem({ listId: list.id, title, amount })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (item) => {
-          this.itemsArray.push(this.createItemRow(item));
-          this.addForm.reset({ title: '', amount: 1 });
-          this.addForm.markAsUntouched();
-          this.addSubmitAttempted.set(false);
-          this.cdr.markForCheck();
-        },
-        error: () => {
-          this.addItemError.set(true);
-          this.cdr.markForCheck();
-        },
-      });
+    this.listsBus.emit({
+      type: 'LIST_DETAIL_ADD_ITEM',
+      draft: { listId: list.id, title, amount },
+    });
   }
 
   saveRow(row: FormGroup): void {
@@ -172,77 +131,127 @@ export class ListDetail implements OnInit {
       next.delete(id);
       return next;
     });
-    this.itemSaveHttpErrorId.set(null);
     const title = (fields.controls['title'].value as string).trim();
     const amount = Math.max(1, Math.floor(Number(fields.controls['amount'].value)) || 1);
+    const correlationId = newListsCorrelationId();
+    this.saveRowCorrelationById.set(id, correlationId);
     this.savingRowId.set(id);
-    this.api
-      .updateItem(id, { title, amount })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (updated) => {
-          row.patchValue(
-            {
-              bought: updated.bought,
-              fields: { title: updated.title, amount: updated.amount },
-            },
-            { emitEvent: false },
-          );
-          fields.markAsPristine();
-          this.savingRowId.set(null);
-          this.itemSaveHttpErrorId.set(null);
-          this.cdr.markForCheck();
-        },
-        error: () => {
-          this.savingRowId.set(null);
-          this.itemSaveHttpErrorId.set(id);
-          this.cdr.markForCheck();
-        },
-      });
+    this.listsBus.emit({
+      type: 'LIST_DETAIL_SAVE_ITEM',
+      id,
+      body: { title, amount },
+      correlationId,
+    });
   }
 
   onBoughtChange(row: FormGroup, event: Event): void {
     const checked = (event.target as HTMLInputElement).checked;
     const id = row.get('id')?.value as number;
-    this.itemBoughtHttpErrorId.set(null);
-    this.api
-      .updateItem(id, { bought: checked })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (updated) => {
-          row.patchValue({ bought: updated.bought }, { emitEvent: false });
-          this.itemBoughtHttpErrorId.set(null);
-          this.cdr.markForCheck();
-        },
-        error: () => {
-          row.patchValue({ bought: !checked }, { emitEvent: false });
-          (event.target as HTMLInputElement).checked = !checked;
-          this.itemBoughtHttpErrorId.set(id);
-          this.cdr.markForCheck();
-        },
-      });
+    this.pendingBoughtByItemId.set(id, !checked);
+    this.listsBus.emit({
+      type: 'LIST_DETAIL_BOUGHT',
+      id,
+      bought: checked,
+    });
   }
 
   deleteRow(row: FormGroup): void {
     const id = row.get('id')?.value as number;
-    this.itemDeleteHttpErrorId.set(null);
-    this.api
-      .deleteItem(id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          const idx = this.itemsArray.controls.findIndex((c) => c.get('id')?.value === id);
-          if (idx >= 0) {
-            this.itemsArray.removeAt(idx);
-          }
-          this.itemDeleteHttpErrorId.set(null);
-          this.cdr.markForCheck();
-        },
-        error: () => {
-          this.itemDeleteHttpErrorId.set(id);
-          this.cdr.markForCheck();
-        },
-      });
+    this.listsBus.emit({ type: 'LIST_DETAIL_DELETE_ITEM', id });
+  }
+
+  private onDetailBusResult(e: ListsDetailResult): void {
+    switch (e.type) {
+      case 'LIST_DETAIL_LOADED':
+        this.rebuildItemsForm(e.items);
+        this.addSubmitAttempted.set(false);
+        break;
+      case 'LIST_DETAIL_LOAD_FAILED':
+        this.itemsArray.clear();
+        break;
+      case 'LIST_DETAIL_ITEM_CREATED': {
+        this.itemsArray.push(this.createItemRow(e.item));
+        this.addForm.reset({ title: '', amount: 1 });
+        this.addForm.markAsUntouched();
+        this.addSubmitAttempted.set(false);
+        break;
+      }
+      case 'LIST_DETAIL_ADD_ITEM_FAILED':
+        break;
+      case 'LIST_DETAIL_ITEM_SAVED': {
+        if (!this.matchesSaveRowCorrelation(e.id, e.correlationId)) {
+          break;
+        }
+        this.saveRowCorrelationById.delete(e.id);
+        const row = this.findItemRow(e.id);
+        if (!row) {
+          break;
+        }
+        const fields = row.get('fields') as FormGroup;
+        const updated = e.item;
+        row.patchValue(
+          {
+            bought: updated.bought,
+            fields: { title: updated.title, amount: updated.amount },
+          },
+          { emitEvent: false },
+        );
+        fields.markAsPristine();
+        this.savingRowId.set(null);
+        break;
+      }
+      case 'LIST_DETAIL_ITEM_SAVE_FAILED':
+        if (this.matchesSaveRowCorrelation(e.id, e.correlationId)) {
+          this.saveRowCorrelationById.delete(e.id);
+          this.savingRowId.set(null);
+        }
+        break;
+      case 'LIST_DETAIL_ITEM_BOUGHT_UPDATED': {
+        const row = this.findItemRow(e.id);
+        if (row) {
+          row.patchValue({ bought: e.item.bought }, { emitEvent: false });
+        }
+        this.pendingBoughtByItemId.delete(e.id);
+        break;
+      }
+      case 'LIST_DETAIL_ITEM_BOUGHT_FAILED': {
+        const row = this.findItemRow(e.id);
+        const prev = this.pendingBoughtByItemId.get(e.id);
+        this.pendingBoughtByItemId.delete(e.id);
+        if (row && prev !== undefined) {
+          row.patchValue({ bought: prev }, { emitEvent: false });
+        }
+        break;
+      }
+      case 'LIST_DETAIL_ITEM_DELETED': {
+        const idx = this.itemsArray.controls.findIndex((c) => c.get('id')?.value === e.id);
+        if (idx >= 0) {
+          this.itemsArray.removeAt(idx);
+        }
+        break;
+      }
+      case 'LIST_DETAIL_ITEM_DELETE_FAILED':
+        break;
+      default: {
+        const exhaustive: never = e;
+        void exhaustive;
+      }
+    }
+    this.cdr.markForCheck();
+  }
+
+  private matchesSaveRowCorrelation(id: number, incoming: string | undefined): boolean {
+    if (incoming === undefined) {
+      return true;
+    }
+    return this.saveRowCorrelationById.get(id) === incoming;
+  }
+
+  private findItemRow(id: number): FormGroup | null {
+    const row = this.itemsArray.controls.find((c) => c.get('id')?.value === id) as
+      | FormGroup
+      | undefined;
+    return row ?? null;
   }
 
   private rebuildItemsForm(items: GroceryItem[]): void {

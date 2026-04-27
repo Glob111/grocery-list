@@ -6,6 +6,7 @@ import { of, throwError } from 'rxjs';
 import { EmptyTranslateLoader } from '@testing/empty-translate.loader';
 
 import { GroceryApiService } from '@app/core/services/grocery-api.service';
+import { ListsFacade } from '@app/features/lists/state/lists-facade.service';
 
 import { ListsShell } from './lists-shell.component';
 
@@ -23,7 +24,7 @@ describe('ListsShell', () => {
           loader: { provide: TranslateLoader, useClass: EmptyTranslateLoader },
         }),
       ],
-      providers: [provideRouter([]), { provide: GroceryApiService, useValue: api }],
+      providers: [provideRouter([]), ListsFacade, { provide: GroceryApiService, useValue: api }],
     }).compileComponents();
   });
 
@@ -31,8 +32,9 @@ describe('ListsShell', () => {
     const fixture = TestBed.createComponent(ListsShell);
     fixture.detectChanges();
     expect(api.getLists).toHaveBeenCalled();
-    expect(fixture.componentInstance.lists()).toEqual([{ id: 1, name: 'A' }]);
-    expect(fixture.componentInstance.hasLoadError()).toBe(false);
+    const cmp = fixture.componentInstance;
+    expect(cmp.facade.catalog()).toEqual([{ id: 1, name: 'A' }]);
+    expect(cmp.facade.catalogError()).toBe(false);
   });
 
   it('setLang persists code, switches translate, updates html lang', () => {
@@ -63,6 +65,6 @@ describe('ListsShell', () => {
     api.getLists.mockReturnValue(throwError(() => new Error('x')));
     const fixture = TestBed.createComponent(ListsShell);
     fixture.detectChanges();
-    expect(fixture.componentInstance.hasLoadError()).toBe(true);
+    expect(fixture.componentInstance.facade.catalogError()).toBe(true);
   });
 });

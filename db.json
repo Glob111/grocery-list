@@ -14,8 +14,8 @@
       "id": 1,
       "listId": 1,
       "title": "Молоко",
-      "amount": 5,
-      "bought": true
+      "amount": 8,
+      "bought": false
     },
     {
       "id": 2,
